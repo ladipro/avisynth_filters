@@ -20,9 +20,11 @@ struct PixelHealRecipe {
 
 class HealDeadPixels : public GenericVideoFilter {
   std::vector<PixelHealRecipe> pixel_recipes;
+  ULONG_PTR gdiplusToken;
 
 public:
   HealDeadPixels(PClip _child, const char* mask_file, IScriptEnvironment* env);
+  ~HealDeadPixels();
 
   void GeneratePixelHealRecipes(std::unique_ptr<Gdiplus::Bitmap> &bitmap);
   static bool IsDeadPixel(

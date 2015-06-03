@@ -15,12 +15,24 @@ HealDeadPixels::HealDeadPixels(PClip _child, const char* mask_file, IScriptEnvir
   std::use_facet<std::ctype<wchar_t> >(std::locale()).widen
     (&mask_file[0], &mask_file[0] + len, &mask_file_w[0]);
 
+  Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+  gdiplusStartupInput.GdiplusVersion = 1;
+  gdiplusStartupInput.DebugEventCallback = NULL;
+  gdiplusStartupInput.SuppressBackgroundThread = FALSE;
+  gdiplusStartupInput.SuppressExternalCodecs = FALSE;
+  if (GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL) != Gdiplus::Ok) {
+    env->ThrowError("HealDeadPixels: Unable to initialize GDI+!");
+  }
+
   std::unique_ptr<Gdiplus::Bitmap> bitmap(new Gdiplus::Bitmap(mask_file_w.c_str()));
   if (bitmap->GetWidth() != vi.width || bitmap->GetHeight() != vi.height) {
     env->ThrowError("HealDeadPixels: Mask bitmap does not match frame size!");
   }
-
   GeneratePixelHealRecipes(bitmap);
+}
+
+HealDeadPixels::~HealDeadPixels() {
+  Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 void HealDeadPixels::GeneratePixelHealRecipes(std::unique_ptr<Gdiplus::Bitmap> &bitmap) {
