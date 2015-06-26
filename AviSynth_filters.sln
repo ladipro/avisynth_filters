@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HealDeadPixels", "HealDeadPixels\HealDeadPixels.vcxproj", "{95141C49-C6FF-424F-A1F2-2B9783DEB6EA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KelvinColorShift", "KelvinColorShift\KelvinColorShift.vcxproj", "{FE814CCD-C134-40B6-81FE-435CDF89251E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -12,9 +14,12 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{95141C49-C6FF-424F-A1F2-2B9783DEB6EA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{95141C49-C6FF-424F-A1F2-2B9783DEB6EA}.Debug|Win32.Build.0 = Debug|Win32
 		{95141C49-C6FF-424F-A1F2-2B9783DEB6EA}.Release|Win32.ActiveCfg = Release|Win32
 		{95141C49-C6FF-424F-A1F2-2B9783DEB6EA}.Release|Win32.Build.0 = Release|Win32
+		{FE814CCD-C134-40B6-81FE-435CDF89251E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FE814CCD-C134-40B6-81FE-435CDF89251E}.Debug|Win32.Build.0 = Debug|Win32
+		{FE814CCD-C134-40B6-81FE-435CDF89251E}.Release|Win32.ActiveCfg = Release|Win32
+		{FE814CCD-C134-40B6-81FE-435CDF89251E}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
