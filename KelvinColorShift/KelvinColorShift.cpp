@@ -5,7 +5,7 @@
 #include "KelvinColorShift.h"
 
 class KelvinColorShift : public GenericVideoFilter {
-  RGB16 rgb_shift;
+  RGB48 rgb_shift;
 
 public:
   KelvinColorShift(PClip _child, int from_temp, int to_temp, IScriptEnvironment* env)
@@ -14,21 +14,21 @@ public:
         to_temp < 1000 || to_temp > 10000) {
       env->ThrowError("KelvinColorShift: Color temperature must be between 1000 and 10000!");
     }
+    if (!vi.IsRGB()) {
+      env->ThrowError("KelvinColorShift: Unsupported color format. RGB data only!");
+    }
 
-    RGB16 old_wb = ComputeWhiteBalance(from_temp);
-    RGB16 new_wb = ComputeWhiteBalance(to_temp);
-
-    rgb_shift.R = old_wb.R - new_wb.R;
-    rgb_shift.G = old_wb.G - new_wb.G;
-    rgb_shift.B = old_wb.B - new_wb.B;
+    RGB48 old_wb = ComputeWhiteBalance(from_temp);
+    RGB48 new_wb = ComputeWhiteBalance(to_temp);
+    rgb_shift = old_wb - new_wb;
 
     // normalize the shift to preserve luminosity
     rgb_shift = rgb_shift - rgb_shift.Y();
   }
 
   // Based on http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
-  RGB16 ComputeWhiteBalance(int temp) {
-    RGB16 white_balance;
+  RGB48 ComputeWhiteBalance(int temp) {
+    RGB48 white_balance;
     double temp_fp = (double)temp / 100;
 
     // red
@@ -71,24 +71,19 @@ public:
 
     unsigned char* ptr = frame->GetWritePtr();
     int pitch = frame->GetPitch();
-
+    int row_size = frame->GetRowSize();
+    int height = frame->GetHeight();
     int bytes_per_pixel = vi.IsRGB24() ? 3 : 4;
-#define FRAME_XY_TO_INDEX(x, y) ((y) * pitch) + ((x) * bytes_per_pixel)
 
-    // TODO: Beautify, support YUV color spaces?
-    for (int y = 0; y < frame->GetHeight(); y++) {
-      for (int x = 0; x < frame->GetRowSize() / bytes_per_pixel; x++) {
-        size_t index = FRAME_XY_TO_INDEX(x, y);
-
-        RGB16 rgb(&ptr[index]);
-        rgb = rgb * rgb_shift;
-        ptr[index] = rgb.B8();
-        ptr[index + 1] = rgb.G8();
-        ptr[index + 2] = rgb.R8();
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < row_size; x += bytes_per_pixel) {
+        RGB48 rgb(&ptr[x]);
+        rgb *= rgb_shift;
+        rgb.ToRGB8(&ptr[x]);
       }
+      ptr += pitch;
     }
 
-#undef FRAME_XY_TO_INDEX
     return frame;
   }
 };
