@@ -1,3 +1,17 @@
+class Helpers {
+public:
+  template<typename S, typename D>
+  static D Clamp(S v) {
+    if (v < std::numeric_limits<D>::min()) {
+      return std::numeric_limits<D>::min();
+    }
+    if (v > std::numeric_limits<D>::max()) {
+      return std::numeric_limits<D>::max();
+    }
+    return (D)v;
+  }
+};
+
 // Represents a color as three 16-bit signed numbers and defines some
 // intuitive as well as totally wacky operations on it.
 struct RGB48 {
@@ -63,10 +77,10 @@ struct RGB48 {
     return *this;
   }
 
-  short Y() const {
-    // Y = 0.299 R + 0.587 G + 0.114 B (dogscience)
-    return (short)(0.299 * R + 0.587 * G + 0.114 * B);
-  }
+  // BT.2020
+  short Y() const { return (short)(0.299 * R + 0.587 * G + 0.114 * B); }
+  short U() const { return (short)(-0.168736 * R - 0.331264 * G + 0.5 * B); }
+  short V() const { return (short)(0.5 * R - 0.418688 * G - 0.081312 * B); }
 
   unsigned char R8() const { return (R > 0) ? (R / 128) : 0; }
   unsigned char G8() const { return (G > 0) ? (G / 128) : 0; }
@@ -74,12 +88,6 @@ struct RGB48 {
 
 private:
   static short Clamp(int v) {
-    if (v < SHRT_MIN) {
-      return SHRT_MIN;
-    }
-    if (v > SHRT_MAX) {
-      return SHRT_MAX;
-    }
-    return (short)v;
+    return Helpers::Clamp<int, short>(v);
   }
 };

@@ -14,8 +14,8 @@ public:
         to_temp < 1000 || to_temp > 10000) {
       env->ThrowError("KelvinColorShift: Color temperature must be between 1000 and 10000!");
     }
-    if (!vi.IsRGB()) {
-      env->ThrowError("KelvinColorShift: Unsupported color format. RGB data only!");
+    if (!vi.IsRGB() && !(vi.IsPlanar() && vi.IsYUV())) {
+      env->ThrowError("KelvinColorShift: Unsupported color format. RGB or planar YUV data only!");
     }
 
     RGB48 old_wb = ComputeWhiteBalance(from_temp);
@@ -69,19 +69,46 @@ public:
     PVideoFrame frame = child->GetFrame(n, env);
     env->MakeWritable(&frame);
 
-    unsigned char* ptr = frame->GetWritePtr();
-    int pitch = frame->GetPitch();
-    int row_size = frame->GetRowSize();
-    int height = frame->GetHeight();
-    int bytes_per_pixel = vi.IsRGB24() ? 3 : 4;
+    if (vi.IsRGB()) {
+      unsigned char* ptr = frame->GetWritePtr();
+      int pitch = frame->GetPitch();
+      int row_size = frame->GetRowSize();
+      int height = frame->GetHeight();
+      int bytes_per_pixel = vi.IsRGB24() ? 3 : 4;
 
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < row_size; x += bytes_per_pixel) {
-        RGB48 rgb(&ptr[x]);
-        rgb *= rgb_shift;
-        rgb.ToRGB8(&ptr[x]);
+      for (int y = 0; y < height; y++) {
+        for (int x = 0; x < row_size; x += bytes_per_pixel) {
+          RGB48 rgb(&ptr[x]);
+          rgb *= rgb_shift;
+          rgb.ToRGB8(&ptr[x]);
+        }
+        ptr += pitch;
       }
-      ptr += pitch;
+    } else {
+      _ASSERT(vi.IsPlanar() && vi.IsYUV());
+      int planes[] = {
+        PLANAR_U,
+        PLANAR_V
+      };
+      char plane_shifts[] = {
+        (char)(rgb_shift.U() >> 8),
+        (char)(rgb_shift.V() >> 8)
+      };
+      C_ASSERT(_countof(planes) == _countof(plane_shifts));
+
+      for (int p = 0; p < _countof(planes); p++) {
+        unsigned char* ptr = frame->GetWritePtr(planes[p]);
+        int pitch = frame->GetPitch(planes[p]);
+        int row_size = frame->GetRowSize(planes[p]);
+        int height = frame->GetHeight(planes[p]);
+
+        for (int y = 0; y < height; y++) {
+          for (int x = 0; x < row_size; x++) {
+            ptr[x] = Helpers::Clamp<short, unsigned char>((short)ptr[x] + plane_shifts[p]);
+          }
+          ptr += pitch;
+        }
+      }
     }
 
     return frame;
